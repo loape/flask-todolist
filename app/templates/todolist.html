@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block body %}
+<div id="toast" class="toast"></div>
 <section class="header">
   <h2 class="title">{{todolist.title|title}}</h2>
   <div class="row">
@@ -27,7 +28,13 @@
         <ul>
           {% for todo in todolist.todos %}
             {% if not todo.is_finished %}
-              <li><input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}"> {{ todo.description }}</li>
+              <li class="todo-item open">
+                <input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}">
+                <span class="todo-description">{{ todo.description }}</span>
+                <div class="todo-meta">
+                  <span class="todo-created">创建于: {{ todo.created_at|humanize }}</span>
+                </div>
+              </li>
             {% endif %}
           {% endfor %}
         </ul>
@@ -37,7 +44,16 @@
         <ul>
           {% for todo in todolist.todos %}
             {% if todo.is_finished %}
-              <li><input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}" checked="checked"> {{ todo.description }}</li>
+              <li class="todo-item finished">
+                <input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}" checked="checked">
+                <span class="todo-description">{{ todo.description }}</span>
+                <div class="todo-meta">
+                  <span class="todo-finished">完成于: {{ todo.finished_at|humanize }}</span>
+                  {% if todo.time_spent_humanized %}
+                  <span class="todo-spent">用时: {{ todo.time_spent_humanized }}</span>
+                  {% endif %}
+                </div>
+              </li>
             {% endif %}
           {% endfor %}
         </ul>

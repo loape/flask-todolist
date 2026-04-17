@@ -2,12 +2,21 @@ $(document).ready(function() {
   $(':checkbox').on('click', changeTodoStatus);
 });
 
+function showToast(message, type = 'success') {
+  var toast = $('#toast');
+  toast.text(message);
+  toast.addClass('show ' + type);
+  setTimeout(function() {
+    toast.removeClass('show ' + type);
+  }, 3000);
+}
+
 function changeTodoStatus() {
-  if ($(this).is(':checked')) {
-    putNewStatus($(this).data('todo-id'), true);
-  } else {
-    putNewStatus($(this).data('todo-id'), false);
-  }
+  var checkbox = $(this);
+  var todoDescription = checkbox.siblings('.todo-description').text();
+  var isFinished = checkbox.is(':checked');
+  
+  putNewStatus(checkbox.data('todo-id'), isFinished, todoDescription);
 }
 
 function csrfSafeMethod(method) {
@@ -34,7 +43,7 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function putNewStatus(todoID, isFinished) {
+function putNewStatus(todoID, isFinished, todoDescription) {
 
   // setup ajax to csrf token
   var csrftoken = getCookie('csrftoken');
@@ -54,7 +63,19 @@ function putNewStatus(todoID, isFinished) {
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(todo),
-      success: function() {
+      success: function(response) {
+        if (isFinished) {
+          var timeMessage = response.time_spent ? '，用时: ' + response.time_spent : '';
+          showToast('🎉 太棒了！完成任务: ' + todoDescription + timeMessage, 'success');
+        } else {
+          showToast('📝 已重新打开任务: ' + todoDescription, 'info');
+        }
+        setTimeout(function() {
+          location.reload();
+        }, 1000);
+      },
+      error: function() {
+        showToast('❌ 操作失败，请重试', 'error');
         location.reload();
       }
     });
