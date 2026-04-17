@@ -50,10 +50,83 @@ tr td.todolist-title {
   word-break: break-word;
 }
 
-.finished-todos li {
+.todo-item {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.todo-item:hover {
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.todo-description {
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.todo-meta {
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 4px;
+  margin-left: 28px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.todo-created,
+.todo-finished {
+  color: #666;
+}
+
+.todo-spent {
+  color: #2ecc71;
+  font-weight: 500;
+}
+
+.finished-todos .todo-description {
   color: #aaa;
-  padding-left: 5pt;
   text-decoration: line-through;
+}
+
+.toast {
+  visibility: hidden;
+  min-width: 320px;
+  margin-left: -160px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  padding: 16px 24px;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  top: 30px;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.toast.info {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.toast.error {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
 
 .container {

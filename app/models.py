@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sized
-from datetime import UTC, datetime
-from typing import Any, Self
+from datetime import datetime, timezone
+from typing import Any
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 from flask import url_for
 from flask_login import UserMixin
@@ -58,10 +62,10 @@ class User(UserMixin, db.Model, BaseModel):  # pyright: ignore[reportIncompatibl
     _email: Mapped[str | None] = mapped_column("email", String(64), unique=True)
     password_hash: Mapped[str | None] = mapped_column(String(128))
     member_since: Mapped[datetime | None] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime, default=lambda: datetime.now(timezone.utc)
     )
     last_seen: Mapped[datetime | None] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime, default=lambda: datetime.now(timezone.utc)
     )
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -128,7 +132,7 @@ class User(UserMixin, db.Model, BaseModel):  # pyright: ignore[reportIncompatibl
         return check_password_hash(self.password_hash, password)
 
     def seen(self) -> Self:
-        self.last_seen = datetime.now(UTC)
+        self.last_seen = datetime.now(timezone.utc)
         return self.save()
 
     def to_dict(self) -> dict[str, Any]:
@@ -158,7 +162,7 @@ class TodoList(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariab
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     _title: Mapped[str | None] = mapped_column("title", String(128))
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+        DateTime, default=lambda: datetime.now(timezone.utc)
     )
     creator: Mapped[str | None] = mapped_column(String(64), ForeignKey("user.username"))
     todos: DynamicMapped[Todo] = relationship(
@@ -173,7 +177,7 @@ class TodoList(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariab
     ) -> None:
         self.title = title or "untitled"
         self.creator = creator
-        self.created_at = created_at or datetime.now(UTC)
+        self.created_at = created_at or datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
         return f"<Todolist: {self.title}>"
@@ -233,7 +237,7 @@ class Todo(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariableOv
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     description: Mapped[str | None] = mapped_column(String(128))
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime, index=True, default=lambda: datetime.now(UTC)
+        DateTime, index=True, default=lambda: datetime.now(timezone.utc)
     )
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime, index=True, default=None
@@ -252,7 +256,7 @@ class Todo(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariableOv
         self.description = description
         self.todolist_id = todolist_id
         self.creator = creator
-        self.created_at = created_at or datetime.now(UTC)
+        self.created_at = created_at or datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
         return "<{} Todo: {} by {}>".format(
@@ -265,7 +269,7 @@ class Todo(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariableOv
 
     def finished(self) -> None:
         self.is_finished = True
-        self.finished_at = datetime.now(UTC)
+        self.finished_at = datetime.now(timezone.utc)
         self.save()
 
     def reopen(self) -> None:
@@ -273,10 +277,42 @@ class Todo(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariableOv
         self.finished_at = None
         self.save()
 
+    @property
+    def time_spent(self):
+        if self.is_finished and self.created_at and self.finished_at:
+            return self.finished_at - self.created_at
+        return None
+
+    @property
+    def time_spent_humanized(self):
+        time_spent = self.time_spent
+        if not time_spent:
+            return None
+        
+        total_seconds = int(time_spent.total_seconds())
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        parts = []
+        if days > 0:
+            parts.append(f"{days}天" if days == 1 else f"{days}天")
+        if hours > 0:
+            parts.append(f"{hours}小时" if hours == 1 else f"{hours}小时")
+        if minutes > 0:
+            parts.append(f"{minutes}分钟" if minutes == 1 else f"{minutes}分钟")
+        if seconds > 0 and not parts:
+            parts.append(f"{seconds}秒" if seconds == 1 else f"{seconds}秒")
+        
+        return " ".join(parts) if parts else "不到1秒"
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "description": self.description,
             "creator": self.creator,
             "created_at": self.created_at,
+            "finished_at": self.finished_at,
             "status": self.status,
+            "time_spent": self.time_spent_humanized,
         }

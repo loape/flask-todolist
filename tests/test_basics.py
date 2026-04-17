@@ -206,3 +206,89 @@ def test_delete_todo(app):
     todo.delete()
     assert db.session.get(Todo, todo_id) is None
     assert todolist.todo_count == 0
+
+
+def test_todo_has_created_at(app):
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    todo = Todo("Test todo with created time", todolist.id).save()
+    todo_from_db = Todo.query.filter_by(id=todo.id).first()
+    
+    assert todo_from_db.created_at is not None
+
+
+def test_todo_has_finished_at_after_completion(app):
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    todo = Todo("Test todo with finished time", todolist.id).save()
+    
+    assert todo.finished_at is None
+    
+    todo.finished()
+    todo_from_db = Todo.query.filter_by(id=todo.id).first()
+    
+    assert todo_from_db.finished_at is not None
+
+
+def test_todo_finished_at_cleared_after_reopen(app):
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    todo = Todo("Test todo", todolist.id).save()
+    
+    todo.finished()
+    assert todo.finished_at is not None
+    
+    todo.reopen()
+    todo_from_db = Todo.query.filter_by(id=todo.id).first()
+    
+    assert todo_from_db.finished_at is None
+
+
+def test_todo_time_spent_calculation(app):
+    from datetime import datetime, timedelta, timezone
+    
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    created_at = datetime.now(timezone.utc) - timedelta(hours=2, minutes=30)
+    todo = Todo("Test todo duration", todolist.id, created_at=created_at).save()
+    
+    todo.finished()
+    
+    time_spent = todo.time_spent
+    assert time_spent is not None
+    assert time_spent.total_seconds() >= 2 * 3600 + 30 * 60
+
+
+def test_todo_time_spent_humanized(app):
+    from datetime import datetime, timedelta, timezone
+    
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    created_at = datetime.now(timezone.utc) - timedelta(hours=2, minutes=30)
+    todo = Todo("Test todo humanized", todolist.id, created_at=created_at).save()
+    
+    todo.finished()
+    
+    assert todo.time_spent_humanized is not None
+    assert "2小时" in todo.time_spent_humanized
+    assert "30分钟" in todo.time_spent_humanized
+
+
+def test_todo_time_spent_none_when_not_finished(app):
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    todo = Todo("Unfinished todo", todolist.id).save()
+    
+    assert todo.time_spent is None
+    assert todo.time_spent_humanized is None
+
+
+def test_todo_to_dict_contains_finished_at_and_time_spent(app):
+    from datetime import datetime, timedelta, timezone
+    
+    todolist = TodoList(SHOPPING_LIST_TITLE).save()
+    created_at = datetime.now(timezone.utc) - timedelta(minutes=45)
+    todo = Todo("Test to_dict", todolist.id, created_at=created_at).save()
+    todo.finished()
+    
+    todo_dict = todo.to_dict()
+    
+    assert "finished_at" in todo_dict
+    assert todo_dict["finished_at"] is not None
+    assert "time_spent" in todo_dict
+    assert todo_dict["time_spent"] is not None
+    assert "45分钟" in todo_dict["time_spent"]

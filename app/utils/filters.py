@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from . import utils
 
@@ -17,7 +17,7 @@ def humanize_time(dt, past_="ago", future_="from now", default="just now"):
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=None)
     else:
-        dt = dt.astimezone(UTC).replace(tzinfo=None)
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
     now = datetime.utcnow()
     if now > dt:
         diff = now - dt
@@ -50,5 +50,5 @@ def humanize_time(dt, past_="ago", future_="from now", default="just now"):
 @utils.app_template_filter("in_seconds")
 def in_seconds(dt):
     if dt.tzinfo is not None:
-        dt = dt.astimezone(UTC).replace(tzinfo=None)
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
     return int(time.mktime(dt.timetuple()))

@@ -1,5 +1,5 @@
 import random
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import forgery_py
 from sqlalchemy import select
@@ -15,7 +15,7 @@ class FakeGenerator:
         db.create_all()
 
     def generate_fake_date(self):
-        return datetime.combine(forgery_py.date.date(True), datetime.now(UTC).time())
+        return datetime.combine(forgery_py.date.date(True), datetime.now(timezone.utc).time())
 
     def generate_fake_users(self, count):
         for _ in range(count):
