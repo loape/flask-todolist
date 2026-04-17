@@ -56,6 +56,68 @@ tr td.todolist-title {
   text-decoration: line-through;
 }
 
+.open-todos li,
+.finished-todos li {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.todo-description {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.todo-time {
+  display: block;
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
+.todo-duration {
+  display: block;
+  font-size: 0.85rem;
+  color: #4a90d9;
+  font-weight: 600;
+  margin-top: 0.3rem;
+}
+
+.finished-todos .todo-duration {
+  color: #5cb85c;
+}
+
+/* Toast notification styles */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.toast {
+  background: #5cb85c;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  margin-bottom: 0.5rem;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast.hide {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
 .container {
   max-width: 800px;
 }

@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sized
-from datetime import UTC, datetime
-from typing import Any, Self
+from datetime import datetime, timezone
+from typing import Any
+
+UTC = timezone.utc
+
+# Python 3.7 compatibility
+try:
+    from typing import Self
+except ImportError:
+    Self = Any
 
 from flask import url_for
 from flask_login import UserMixin
@@ -273,10 +281,34 @@ class Todo(db.Model, BaseModel):  # pyright: ignore[reportIncompatibleVariableOv
         self.finished_at = None
         self.save()
 
+    @property
+    def duration(self) -> str | None:
+        """Calculate the duration between created_at and finished_at."""
+        if self.is_finished and self.finished_at and self.created_at:
+            duration = self.finished_at - self.created_at
+            total_seconds = int(duration.total_seconds())
+            if total_seconds < 60:
+                return f"{total_seconds}秒"
+            elif total_seconds < 3600:
+                minutes = total_seconds // 60
+                seconds = total_seconds % 60
+                return f"{minutes}分{seconds}秒"
+            elif total_seconds < 86400:
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                return f"{hours}小时{minutes}分"
+            else:
+                days = total_seconds // 86400
+                hours = (total_seconds % 86400) // 3600
+                return f"{days}天{hours}小时"
+        return None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "description": self.description,
             "creator": self.creator,
             "created_at": self.created_at,
+            "finished_at": self.finished_at,
             "status": self.status,
+            "duration": self.duration,
         }

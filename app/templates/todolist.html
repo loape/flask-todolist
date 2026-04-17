@@ -27,7 +27,11 @@
         <ul>
           {% for todo in todolist.todos %}
             {% if not todo.is_finished %}
-              <li><input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}"> {{ todo.description }}</li>
+              <li>
+                <input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}">
+                <span class="todo-description">{{ todo.description }}</span>
+                <span class="todo-time">创建于: {{ todo.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              </li>
             {% endif %}
           {% endfor %}
         </ul>
@@ -37,7 +41,13 @@
         <ul>
           {% for todo in todolist.todos %}
             {% if todo.is_finished %}
-              <li><input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}" checked="checked"> {{ todo.description }}</li>
+              <li>
+                <input type="checkbox" id="checkbox" data-todo-id="{{ todo.id }}" checked="checked">
+                <span class="todo-description">{{ todo.description }}</span>
+                <span class="todo-time">创建于: {{ todo.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span class="todo-time">完成于: {{ todo.finished_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span class="todo-duration">用时: {{ todo.duration }}</span>
+              </li>
             {% endif %}
           {% endfor %}
         </ul>

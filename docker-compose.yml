@@ -13,13 +13,3 @@ services:
       sh -c "uv run --no-dev flask db upgrade && uv run --no-dev gunicorn todolist:app -w 2 -b :8000"
     ports:
       - "8000:8000"
-  tests:
-    container_name: todolist-tests
-    image: todolist-dev
-    build:
-      context: .
-      target: dev
-    profiles:
-      - test
-    command: >
-      sh -c "uv run pytest -v"
