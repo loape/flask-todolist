@@ -3,10 +3,12 @@ $(document).ready(function() {
 });
 
 function changeTodoStatus() {
+  var todoId = $(this).data('todo-id');
+  var todoDescription = $(this).siblings('.todo-description').text();
   if ($(this).is(':checked')) {
-    putNewStatus($(this).data('todo-id'), true);
+    putNewStatus(todoId, true, todoDescription);
   } else {
-    putNewStatus($(this).data('todo-id'), false);
+    putNewStatus(todoId, false, todoDescription);
   }
 }
 
@@ -34,8 +36,36 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function putNewStatus(todoID, isFinished) {
+function showToast(message, type) {
+  type = type || 'success';
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
 
+  if (type === 'success') {
+    toast.style.background = '#5cb85c';
+  } else if (type === 'info') {
+    toast.style.background = '#5bc0de';
+  }
+
+  container.appendChild(toast);
+
+  // Trigger animation
+  setTimeout(function() {
+    toast.classList.add('show');
+  }, 10);
+
+  // Remove after 3 seconds
+  setTimeout(function() {
+    toast.classList.add('hide');
+    setTimeout(function() {
+      container.removeChild(toast);
+    }, 300);
+  }, 3000);
+}
+
+function putNewStatus(todoID, isFinished, todoDescription) {
   // setup ajax to csrf token
   var csrftoken = getCookie('csrftoken');
   $.ajaxSetup({
@@ -54,8 +84,17 @@ function putNewStatus(todoID, isFinished) {
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(todo),
-      success: function() {
-        location.reload();
+      success: function(response) {
+        if (isFinished) {
+          var duration = response.duration || '未知时间';
+          showToast('恭喜！完成任务: "' + todoDescription + '"，用时: ' + duration, 'success');
+        } else {
+          showToast('任务已重新打开: "' + todoDescription + '"', 'info');
+        }
+        // Delay reload to show toast
+        setTimeout(function() {
+          location.reload();
+        }, 1500);
       }
     });
   });

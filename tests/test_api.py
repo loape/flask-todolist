@@ -872,3 +872,114 @@ def test_delete_todo(client, url_for):
     )
     assert response.status_code == 200
     assert db.session.get(Todo, todo.id) is None
+
+
+def test_todo_has_created_at_on_creation(client, url_for):
+    """Test that a new todo has created_at set on creation."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    assert todo.created_at is not None
+
+
+def test_todo_finished_at_is_none_when_open(client, url_for):
+    """Test that finished_at is None when todo is not finished."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    assert not todo.is_finished
+    assert todo.finished_at is None
+    assert todo.duration is None
+
+
+def test_todo_finished_sets_finished_at(client, url_for):
+    """Test that finishing a todo sets finished_at."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    todo.finished()
+
+    assert todo.is_finished
+    assert todo.finished_at is not None
+    assert todo.created_at is not None
+
+
+def test_todo_duration_calculated_after_finish(client, url_for):
+    """Test that duration is calculated correctly after finishing."""
+    from datetime import UTC, datetime, timedelta
+
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    # Manually set created_at to 5 minutes ago for testing
+    todo.created_at = datetime.now(UTC) - timedelta(minutes=5)
+    todo.save()
+
+    todo.finished()
+
+    assert todo.duration is not None
+    assert "分" in todo.duration
+
+
+def test_todo_reopen_clears_finished_at(client, url_for):
+    """Test that reopening a todo clears finished_at."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    todo.finished()
+    assert todo.finished_at is not None
+
+    todo.reopen()
+    assert not todo.is_finished
+    assert todo.finished_at is None
+    assert todo.duration is None
+
+
+def test_todo_to_dict_includes_time_fields(client, url_for):
+    """Test that to_dict includes created_at, finished_at and duration."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    todo_dict = todo.to_dict()
+
+    assert "created_at" in todo_dict
+    assert "finished_at" in todo_dict
+    assert "duration" in todo_dict
+    assert "status" in todo_dict
+
+
+def test_finished_todo_to_dict_has_duration(client, url_for):
+    """Test that finished todo's to_dict includes duration."""
+    from datetime import UTC, datetime, timedelta
+
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    # Set created_at to 2 minutes ago
+    todo.created_at = datetime.now(UTC) - timedelta(minutes=2)
+    todo.save()
+    todo.finished()
+
+    todo_dict = todo.to_dict()
+
+    assert todo_dict["status"] == "finished"
+    assert todo_dict["duration"] is not None
+    assert "分" in todo_dict["duration"] or "秒" in todo_dict["duration"]
+
+
+def test_api_update_todo_returns_duration(client, url_for):
+    """Test that API returns duration when marking todo as finished."""
+    todolist = add_todolist("new todolist")
+    todo = add_todo("test todo", todolist.id)
+
+    response = client.put(
+        url_for("api.update_todo_status", todo_id=todo.id),
+        headers=get_headers(),
+        data=json.dumps({"is_finished": True}),
+    )
+
+    assert response.status_code == 200
+    json_response = json.loads(response.data.decode("utf-8"))
+    assert "duration" in json_response
+    assert "finished_at" in json_response
+    assert json_response["status"] == "finished"
